@@ -215,6 +215,9 @@ public final class SQLiteConnection implements CancellationSignal.OnCancelListen
                 mConfiguration.label,
                 SQLiteDebug.DEBUG_SQL_STATEMENTS, SQLiteDebug.DEBUG_SQL_TIME);
 
+        setCipher();
+        setKey();
+        setReKey();
         setPageSize();
         setForeignKeyModeFromConfiguration();
         setJournalSizeLimit();
@@ -248,6 +251,24 @@ public final class SQLiteConnection implements CancellationSignal.OnCancelListen
             } finally {
                 mRecentOperations.endOperation(cookie);
             }
+        }
+    }
+
+    private void setCipher() {
+        if (mConfiguration.cipher != null) {
+            execute("PRAGMA cipher = '" + mConfiguration.cipher + "'", null, null);
+        }
+    }
+
+    private void setKey() {
+        if (mConfiguration.key != null) {
+            execute("PRAGMA key = '" + mConfiguration.key + "'", null, null);
+        }
+    }
+
+    private void setReKey() {
+        if (mConfiguration.rekey != null) {
+            execute("PRAGMA rekey = '" + mConfiguration.rekey + "'", null, null);
         }
     }
 

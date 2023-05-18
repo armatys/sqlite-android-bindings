@@ -93,6 +93,10 @@ public final class SQLiteDatabaseConfiguration {
     public final ArrayList<SQLiteCustomFunction> customFunctions =
             new ArrayList<SQLiteCustomFunction>();
 
+    public String cipher;
+    public String key;
+    public String rekey;
+
     /**
      * Creates a database configuration with the required parameters for opening a
      * database and default values for all other parameters.
@@ -126,6 +130,9 @@ public final class SQLiteDatabaseConfiguration {
 
         this.path = other.path;
         this.label = other.label;
+        this.cipher = other.cipher;
+        this.key = other.key;
+        this.rekey = other.rekey;
         updateParametersFrom(other);
     }
 
@@ -148,6 +155,9 @@ public final class SQLiteDatabaseConfiguration {
         maxSqlCacheSize = other.maxSqlCacheSize;
         locale = other.locale;
         foreignKeyConstraintsEnabled = other.foreignKeyConstraintsEnabled;
+        cipher = other.cipher;
+        key = other.key;
+        rekey = other.rekey;
         customFunctions.clear();
         customFunctions.addAll(other.customFunctions);
     }

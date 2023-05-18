@@ -35,7 +35,7 @@ public interface SQLiteCursorDriver {
      *         null if standard SQLiteCursors should be returned.
      * @return a Cursor over the result set
      */
-    Cursor query(CursorFactory factory, String[] bindArgs);
+    Cursor query(CursorFactory factory, Object[] bindArgs);
 
     /**
      * Called by a SQLiteCursor when it is released.

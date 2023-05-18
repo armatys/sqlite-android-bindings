@@ -44,11 +44,11 @@ public final class SQLiteDirectCursorDriver implements SQLiteCursorDriver {
         mCancellationSignal = cancellationSignal;
     }
 
-    public Cursor query(CursorFactory factory, String[] selectionArgs) {
+    public Cursor query(CursorFactory factory, Object[] selectionArgs) {
         final SQLiteQuery query = new SQLiteQuery(mDatabase, mSql, mCancellationSignal);
         final Cursor cursor;
         try {
-            query.bindAllArgsAsStrings(selectionArgs);
+            bindQueryArgs(query, selectionArgs);
 
             if (factory == null) {
                 cursor = new SQLiteCursor(this, mEditTable, query);
@@ -83,5 +83,40 @@ public final class SQLiteDirectCursorDriver implements SQLiteCursorDriver {
     @Override
     public String toString() {
         return "SQLiteDirectCursorDriver: " + mSql;
+    }
+
+    private static void bindQueryArgs(SQLiteQuery query, Object[] bindArgs) {
+        for (int i = 0; i < bindArgs.length; i++) {
+            bind(query, i + 1, bindArgs[i]);
+        }
+    }
+
+    private static void bind(SQLiteProgram statement, int index, Object arg) {
+        // extracted from android.database.sqlite.SQLiteConnection
+        if (arg == null) {
+            statement.bindNull(index);
+        } else if (arg instanceof byte[]) {
+            statement.bindBlob(index, (byte[]) arg);
+        } else if (arg instanceof Float) {
+            statement.bindDouble(index, (Float) arg);
+        } else if (arg instanceof Double) {
+            statement.bindDouble(index, (Double) arg);
+        } else if (arg instanceof Long) {
+            statement.bindLong(index, (Long) arg);
+        } else if (arg instanceof Integer) {
+            statement.bindLong(index, (Integer) arg);
+        } else if (arg instanceof Short) {
+            statement.bindLong(index, (Short) arg);
+        } else if (arg instanceof Byte) {
+            statement.bindLong(index, (Byte) arg);
+        } else if (arg instanceof String) {
+            statement.bindString(index, (String) arg);
+        } else if (arg instanceof Boolean) {
+            statement.bindLong(index, ((Boolean) arg) ? 1 : 0);
+        } else {
+            throw new IllegalArgumentException("Cannot bind " + arg + " at index " + index
+                    + " Supported types: null, byte[], float, double, long, int, short, byte,"
+                    + " string");
+        }
     }
 }

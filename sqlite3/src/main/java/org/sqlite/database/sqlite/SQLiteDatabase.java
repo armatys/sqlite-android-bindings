@@ -68,7 +68,12 @@ import java.util.WeakHashMap;
  * to the current locale.
  * </p>
  */
-public final class SQLiteDatabase extends SQLiteClosable {
+public class SQLiteDatabase extends SQLiteClosable {
+    static {
+        System.loadLibrary("sqlite3mc");
+        System.loadLibrary("sqliteX");
+    }
+
     private static final String TAG = "SQLiteDatabase";
 
     private static final int EVENT_DB_CORRUPT = 75004;
@@ -255,7 +260,15 @@ public final class SQLiteDatabase extends SQLiteClosable {
      */
     public static final int MAX_SQL_CACHE_SIZE = 100;
 
-    private SQLiteDatabase(String path, int openFlags, CursorFactory cursorFactory,
+    protected SQLiteDatabase(SQLiteDatabaseConfiguration configuration, CursorFactory cursorFactory,
+                             DatabaseErrorHandler errorHandler) {
+        mCursorFactory = cursorFactory;
+        mErrorHandler = errorHandler != null ? errorHandler : new DefaultDatabaseErrorHandler();
+        mConfigurationLocked = configuration;
+    }
+
+
+    protected SQLiteDatabase(String path, int openFlags, CursorFactory cursorFactory,
             DatabaseErrorHandler errorHandler) {
         mCursorFactory = cursorFactory;
         mErrorHandler = errorHandler != null ? errorHandler : new DefaultDatabaseErrorHandler();
@@ -695,6 +708,14 @@ public final class SQLiteDatabase extends SQLiteClosable {
     public static SQLiteDatabase openDatabase(String path, CursorFactory factory, int flags,
             DatabaseErrorHandler errorHandler) {
         SQLiteDatabase db = new SQLiteDatabase(path, flags, factory, errorHandler);
+        db.open();
+        return db;
+    }
+
+    public static SQLiteDatabase openDatabase(SQLiteDatabaseConfiguration configuration,
+                                              CursorFactory factory,
+                                              DatabaseErrorHandler errorHandler) {
+        SQLiteDatabase db = new SQLiteDatabase(configuration, factory, errorHandler);
         db.open();
         return db;
     }
@@ -1255,7 +1276,7 @@ public final class SQLiteDatabase extends SQLiteClosable {
      * @return A {@link Cursor} object, which is positioned before the first entry. Note that
      * {@link Cursor}s are not synchronized, see the documentation for more details.
      */
-    public Cursor rawQuery(String sql, String[] selectionArgs) {
+    public Cursor rawQuery(String sql, Object[] selectionArgs) {
         return rawQueryWithFactory(null, sql, selectionArgs, null, null);
     }
 
@@ -1272,7 +1293,7 @@ public final class SQLiteDatabase extends SQLiteClosable {
      * @return A {@link Cursor} object, which is positioned before the first entry. Note that
      * {@link Cursor}s are not synchronized, see the documentation for more details.
      */
-    public Cursor rawQuery(String sql, String[] selectionArgs,
+    public Cursor rawQuery(String sql, Object[] selectionArgs,
             CancellationSignal cancellationSignal) {
         return rawQueryWithFactory(null, sql, selectionArgs, null, cancellationSignal);
     }
@@ -1311,7 +1332,7 @@ public final class SQLiteDatabase extends SQLiteClosable {
      * {@link Cursor}s are not synchronized, see the documentation for more details.
      */
     public Cursor rawQueryWithFactory(
-            CursorFactory cursorFactory, String sql, String[] selectionArgs,
+            CursorFactory cursorFactory, String sql, Object[] selectionArgs,
             String editTable, CancellationSignal cancellationSignal) {
         acquireReference();
         try {
@@ -1495,7 +1516,7 @@ public final class SQLiteDatabase extends SQLiteClosable {
      *         otherwise. To remove all rows and get a count pass "1" as the
      *         whereClause.
      */
-    public int delete(String table, String whereClause, String[] whereArgs) {
+    public int delete(String table, String whereClause, Object[] whereArgs) {
         acquireReference();
         try {
             SQLiteStatement statement =  new SQLiteStatement(this, "DELETE FROM " + table +
@@ -1542,7 +1563,7 @@ public final class SQLiteDatabase extends SQLiteClosable {
      * @return the number of rows affected
      */
     public int updateWithOnConflict(String table, ContentValues values,
-            String whereClause, String[] whereArgs, int conflictAlgorithm) {
+            String whereClause, Object[] whereArgs, int conflictAlgorithm) {
         if (values == null || values.size() == 0) {
             throw new IllegalArgumentException("Empty values");
         }
@@ -1623,12 +1644,12 @@ public final class SQLiteDatabase extends SQLiteClosable {
      * For UPDATE statements, use any of the following instead.
      * <ul>
      *   <li>{@link #update(String, ContentValues, String, String[])}</li>
-     *   <li>{@link #updateWithOnConflict(String, ContentValues, String, String[], int)}</li>
+     *   <li>{@link #updateWithOnConflict(String, ContentValues, String, Object[], int)}</li>
      * </ul>
      * <p>
      * For DELETE statements, use any of the following instead.
      * <ul>
-     *   <li>{@link #delete(String, String, String[])}</li>
+     *   <li>{@link #delete(String, String, Object[])}</li>
      * </ul>
      * <p>
      * For example, the following are good candidates for using this method:
